@@ -1,0 +1,57 @@
+#!/bin/sh
+
+MILHO_PATH=""
+
+PASSED_COUNT=0
+FAILED_COUNT=0
+
+if [ -z "$1" ]
+then
+  echo "Warning: No path to the milho interpreter was provided, defaulting to version installed."
+  PATH=`whereis milho | cut -d' ' -f2`
+
+  if [ -z "$PATH" ]
+  then
+    echo "Error: No milho interpreter found, exiting."
+    exit 1
+  else
+    echo "Found milho interpreter at ${PATH}"
+    MILHO_PATH=${PATH}
+  fi
+else
+  MILHO_PATH="$1"
+fi
+
+cd src
+for test in * ; do
+  echo -e "\nTesting $test..."
+  cd $test
+
+  for file in *; do
+    echo "$file:"
+
+    while read -r result; do
+      flag=${result:0:4}
+      text=${result:4}
+
+      if [ "$flag" = "PASS" ]
+      then
+        flag="\033[0;32mPASS\033[0m"
+        ((PASSED_COUNT++))
+      elif [ "$flag" = "FAIL" ]
+      then
+        flag="\033[0;31mFAIL\033[0m"
+        ((FAILED_COUNT++))
+      fi
+
+      echo -e "$flag$text"
+    done <<< $($MILHO_PATH $file)
+
+    echo ""
+  done
+
+  cd ..
+done
+
+echo -e "\033[0;32mTests passed\033[0m: $PASSED_COUNT;"
+echo -e "\033[0;31mTests failed\033[0m: $FAILED_COUNT;"

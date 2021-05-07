@@ -1,0 +1,3 @@
+(test "Add builtin 1 + 1 = 2" 2 (+ 1 1))
+(test "Add builtin no args = 1" 0 (+))
+(test "Add builtin fraction 1/2 + 1/2 = 1" 1 (+ 1/2 1/2))

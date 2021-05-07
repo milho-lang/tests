@@ -1,0 +1,1 @@
+(test "Literal string \"milho\"=\"milho\"" "milho" "milho")

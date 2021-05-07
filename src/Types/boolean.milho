@@ -1,0 +1,5 @@
+(test "Literal boolean True" True True)
+(test "Literal boolear False" False False)
+
+(test "Literal boolean Real = True" Real True)
+(test "Literal boolear Feike = False" Feike False)
