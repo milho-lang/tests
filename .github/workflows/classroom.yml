@@ -1,0 +1,104 @@
+# .github/workflows/create-pr.yml
+name: Create Review PR
+
+on:
+  - push
+  - workflow_dispatch
+  - repository_dispatch
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  create-pr:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # full history to access all branches
+
+      - name: Check if PR already exists
+        id: check
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Check if the feature branch exists
+          if ! git show-ref --verify --quiet refs/remotes/origin/danfragoso-patch-1; then
+            echo "Feature branch does not exist, skipping"
+            echo "skip=true" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          # Check for existing PR
+          existing=$(gh pr list --head danfragoso-patch-1 --state all --json number --jq '.[0].number')
+          if [ -n "$existing" ]; then
+            echo "PR already exists (#$existing), skipping"
+            echo "skip=true" >> $GITHUB_OUTPUT
+          else
+            echo "skip=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create PR
+        if: steps.check.outputs.skip != 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh pr create \
+            --base main \
+            --head danfragoso-patch-1 \
+            --title "Add user authentication flow" \
+            --body "## Context
+
+          Our API currently has no authentication. This PR adds JWT-based authentication to protect our endpoints.
+
+          ## Changes
+
+          - Added JWT token generation and validation
+          - Created auth middleware
+          - Added login/logout endpoints
+          - Updated user model with password hashing
+
+          ## Your Task
+
+          Please review this pull request as you would in a real work environment. Leave comments directly on the code addressing:
+
+          - **Code quality**: Is the code clean, readable, and maintainable?
+          - **Bugs**: Do you see any potential bugs or edge cases not handled?
+          - **Security**: Are there any security concerns with this implementation?
+          - **Testing**: Is the test coverage adequate? What's missing?
+          - **Design**: Are there architectural improvements you'd suggest?
+
+          Feel free to approve, request changes, or leave general comments.
+
+          ---
+          ⏰ *Please complete your review within 48 hours of receiving this assignment.*"
+
+      - name: Add instructions comment
+        if: steps.check.outputs.skip != 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Give GH a moment to index the PR
+          sleep 2
+          
+          pr_number=$(gh pr list --head danfragoso-patch-1 --json number --jq '.[0].number')
+          
+          gh pr comment "$pr_number" --body "## 👋 Welcome!
+
+          This is your code review exercise. Here's how to complete it:
+
+          1. **Review the Files Changed tab** - Click on 'Files changed' above to see the diff
+          2. **Leave inline comments** - Click the + button next to any line to add a comment
+          3. **Submit your review** - When done, click 'Review changes', write a summary, and select:
+             - ✅ Approve
+             - 💬 Comment
+             - ❌ Request changes
+
+          ### Tips
+          - Quality over quantity - a few thoughtful comments beat many superficial ones
+          - Be specific - explain *why* something is an issue, not just *that* it is
+          - Be constructive - suggest improvements, don't just criticize
+
+          Good luck! 🍀"
